@@ -45,7 +45,6 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         } else {
             Toast.makeText(this.getApplicationContext(), "已绑定Service", Toast.LENGTH_SHORT).show();
         }
-
     }
 
     public void unBindService(View view) {
