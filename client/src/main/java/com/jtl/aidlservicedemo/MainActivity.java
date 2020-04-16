@@ -18,7 +18,7 @@ import com.jtl.service.ICameraInterface;
 /**
  * @author TianLong
  */
-public class MainActivity extends AppCompatActivity implements ServiceConnection{
+public class MainActivity extends AppCompatActivity implements ServiceConnection {
     private String servicePackage = "com.jtl.service";
     private String serviceAction = "com.jtl.cameraservice";
     private volatile boolean isBindService = false;
@@ -40,7 +40,8 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         if (!isBindService) {
             Intent intent = new Intent(serviceAction);
             intent.setPackage(servicePackage);
-            this.getApplicationContext().bindService(intent, this, BIND_AUTO_CREATE);
+            isBindService = this.bindService(intent, this, BIND_AUTO_CREATE);
+            Toast.makeText(this.getApplicationContext(), isBindService ? "绑定Service成功" : "绑定Service失败", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this.getApplicationContext(), "已绑定Service", Toast.LENGTH_SHORT).show();
         }
@@ -49,23 +50,33 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     public void unBindService(View view) {
         if (isBindService) {
-            Intent intent = new Intent(serviceAction);
-            intent.setPackage(servicePackage);
-            this.getApplicationContext().bindService(intent, this, BIND_AUTO_CREATE);
+            //回调解注册
+            try {
+                mICameraInterface.unregister(mICameraCallBack);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+            this.unbindService(this);
+            isBindService = false;
+            isConnectService = false;
+            mICameraInterface = null;
+            Toast.makeText(this.getApplicationContext(), "解绑Service成功", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this.getApplicationContext(), "已解绑Service", Toast.LENGTH_SHORT).show();
         }
     }
 
     public void openCamera(View view) throws RemoteException {
-        if (isConnectService&&mICameraInterface!=null){
+        if (isConnectService && mICameraInterface != null) {
             mICameraInterface.openCamera("0");
+            Toast.makeText(this.getApplicationContext(), "开启相机", Toast.LENGTH_SHORT).show();
         }
     }
 
     public void closeCamera(View view) throws RemoteException {
-        if (isConnectService&&mICameraInterface!=null){
+        if (isConnectService && mICameraInterface != null) {
             mICameraInterface.closeCamera();
+            Toast.makeText(this.getApplicationContext(), "关闭相机", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -75,8 +86,8 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         mICameraInterface = ICameraInterface.Stub.asInterface(service);
         isConnectService = true;
         try {
-            mICameraInterface.initCamera(640,480,true);
-            if (mICameraCallBack==null){
+            mICameraInterface.initCamera(640, 480, true);
+            if (mICameraCallBack == null) {
                 mICameraCallBack = new CameraFrameCallBack();
             }
             mICameraInterface.register(mICameraCallBack);
@@ -87,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
+        //在连接正常关闭的情况下是不会被调用的, 该方法只在Service 被破坏了或者被杀死的时候调用.
         isConnectService = false;
         try {
             mICameraInterface.unregister(mICameraCallBack);
@@ -96,11 +108,11 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         mICameraInterface = null;
     }
 
-    private class CameraFrameCallBack extends ICameraCallBack.Stub{
+    private class CameraFrameCallBack extends ICameraCallBack.Stub {
 
         @Override
         public void cameraCallBack(CameraData data) throws RemoteException {
-            mCameraGLSurface.setCameraData(data.mCameraId,data.imageData);
+            mCameraGLSurface.setCameraData(data.mCameraId, data.imageData);
             mCameraGLSurface.requestRender();
         }
     }
