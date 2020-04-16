@@ -1,4 +1,7 @@
 # AIDLService
+### 简介
+  该示例代码，用来演示AIDL跨进程传输对象数据。跨进程之间的回调如何实现。
+
 ### Service端
 1. Service端实现了相机的基本功能。
 ### Client端
