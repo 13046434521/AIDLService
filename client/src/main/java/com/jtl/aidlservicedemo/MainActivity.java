@@ -7,18 +7,22 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
 import com.jtl.aidlservicedemo.camera.CameraGLSurface;
 import com.jtl.service.CameraData;
+import com.jtl.service.CameraSize;
 import com.jtl.service.ICameraCallBack;
 import com.jtl.service.ICameraInterface;
+import com.jtl.service.ISize;
 
 /**
  * @author TianLong
  */
 public class MainActivity extends AppCompatActivity implements ServiceConnection {
+    private static final String TAG = "MainActivity";
     private String servicePackage = "com.jtl.service";
     private String serviceAction = "com.jtl.cameraservice";
     private volatile boolean isBindService = false;
@@ -26,6 +30,9 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     private ICameraInterface mICameraInterface;
     private CameraGLSurface mCameraGLSurface;
     private ICameraCallBack mICameraCallBack;
+
+    private int imageWidth = 960;
+    private int imageHeight = 720;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +75,10 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     public void openCamera(View view) throws RemoteException {
         if (isConnectService && mICameraInterface != null) {
             mICameraInterface.openCamera("0");
+            ISize[] iSizes = getCameraSize().getISizes();
+            for (ISize size : iSizes) {
+                Log.w(TAG, size.toString());
+            }
             Toast.makeText(this.getApplicationContext(), "开启相机", Toast.LENGTH_SHORT).show();
         }
     }
@@ -79,13 +90,21 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         }
     }
 
+    public CameraSize getCameraSize() throws RemoteException {
+        if (isConnectService && mICameraInterface != null) {
+            return mICameraInterface.getCameraSize();
+        }
+
+        return null;
+    }
+
 
     @Override
     public void onServiceConnected(ComponentName name, IBinder service) {
         mICameraInterface = ICameraInterface.Stub.asInterface(service);
         isConnectService = true;
         try {
-            mICameraInterface.initCamera(640, 480, true);
+            mICameraInterface.initCamera(imageWidth, imageHeight, true);
             if (mICameraCallBack == null) {
                 mICameraCallBack = new CameraFrameCallBack();
             }
@@ -111,6 +130,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
         @Override
         public void cameraCallBack(CameraData data) throws RemoteException {
+            mCameraGLSurface.setDataSize(imageWidth, imageHeight);
             mCameraGLSurface.setCameraData(data.mCameraId, data.imageData);
             mCameraGLSurface.requestRender();
         }

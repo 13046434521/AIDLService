@@ -97,4 +97,21 @@ public class CameraGLSurface extends BaseGLSurface {
     public void setCameraDataType(@Constant.CameraData int cameraDataType) {
         this.mCameraType = cameraDataType;
     }
+
+    public void setDataSize(int width, int height) {
+        if (this.width != width || this.height != height) {
+            this.width = width;
+            this.height = height;
+            mYData = new byte[width * height];
+            mYBuffer = ByteBuffer.allocateDirect(width * height);
+            mYBuffer.order(ByteOrder.nativeOrder());
+            mYBuffer.position(0);
+
+            mUVData = new byte[width * height / 2];
+            mUVBuffer = ByteBuffer.allocateDirect(width * height / 2);
+            mUVBuffer.order(ByteOrder.nativeOrder());
+            mUVBuffer.position(0);
+        }
+        mCameraRender.onSurfaceChanged(this.width, this.height);
+    }
 }

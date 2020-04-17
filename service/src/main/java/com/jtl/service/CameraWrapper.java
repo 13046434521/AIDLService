@@ -90,7 +90,9 @@ public class CameraWrapper implements ImageReader.OnImageAvailableListener {
             CameraCharacteristics cameraCharacteristics = manager.getCameraCharacteristics(cameraType);
             StreamConfigurationMap map = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             mSizes = map.getOutputSizes(ImageFormat.YUV_420_888);
-
+            for (Size size : mSizes) {
+                Log.w(TAG, size.toString());
+            }
             if (!mCameraSemaphore.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 return;
             }
