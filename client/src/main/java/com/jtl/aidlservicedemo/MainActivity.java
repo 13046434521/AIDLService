@@ -16,7 +16,8 @@ import com.jtl.service.CameraData;
 import com.jtl.service.CameraSize;
 import com.jtl.service.ICameraCallBack;
 import com.jtl.service.ICameraInterface;
-import com.jtl.service.ISize;
+
+import java.util.List;
 
 /**
  * @author TianLong
@@ -75,9 +76,9 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
     public void openCamera(View view) throws RemoteException {
         if (isConnectService && mICameraInterface != null) {
             mICameraInterface.openCamera("0");
-            ISize[] iSizes = getCameraSize().getISizes();
-            for (ISize size : iSizes) {
-                Log.w(TAG, size.toString());
+            List<CameraSize> lists = getCameraSize();
+            for (CameraSize cameraSize : lists) {
+                Log.w(TAG, cameraSize.toString());
             }
             Toast.makeText(this.getApplicationContext(), "开启相机", Toast.LENGTH_SHORT).show();
         }
@@ -90,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         }
     }
 
-    public CameraSize getCameraSize() throws RemoteException {
+    public List getCameraSize() throws RemoteException {
         if (isConnectService && mICameraInterface != null) {
             return mICameraInterface.getCameraSize();
         }

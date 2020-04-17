@@ -8,6 +8,9 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.util.Size;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author TianLong
  * @date 2020/4/15
@@ -95,7 +98,7 @@ public class CameraService extends Service {
         }
 
         @Override
-        public CameraSize getCameraSize() throws RemoteException {
+        public List getCameraSize() throws RemoteException {
             return getSize();
         }
 
@@ -118,14 +121,14 @@ public class CameraService extends Service {
             mRemoteCallbackList.finishBroadcast();
         }
 
-        public CameraSize getSize() {
+        public List getSize() {
             Size[] sizes = mCameraWrapper.getSizes();
-            ISize[] iSize = new ISize[sizes.length];
+            List list = new ArrayList();
             for (int i = 0; i < sizes.length; i++) {
-                ISize size = new ISize(sizes[i].getWidth(), sizes[i].getHeight());
-                iSize[i] = size;
+                CameraSize size = new CameraSize(sizes[i].getWidth(), sizes[i].getHeight());
+                list.add(size);
             }
-            return new CameraSize(iSize);
+            return list;
         }
     }
 }

@@ -2,10 +2,11 @@ package com.jtl.service;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 
 /**
  * @author：TianLong
- * @date：2020/4/17 20:58
+ * @date：2020/4/17 21:26
  */
 public class CameraSize implements Parcelable {
     public static final Creator<CameraSize> CREATOR = new Creator<CameraSize>() {
@@ -19,18 +20,39 @@ public class CameraSize implements Parcelable {
             return new CameraSize[size];
         }
     };
-    private ISize[] mISizes;
+    private int width;
+    private int height;
 
-    public CameraSize(ISize[] ISizes) {
-        mISizes = ISizes.clone();
+    public CameraSize(int width, int height) {
+        this.width = width;
+        this.height = height;
     }
 
     protected CameraSize(Parcel in) {
-        mISizes = in.createTypedArray(ISize.CREATOR);
+        width = in.readInt();
+        height = in.readInt();
     }
 
-    public ISize[] getISizes() {
-        return mISizes;
+    public int getWidth() {
+        return width;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return width + " x " + height;
     }
 
     @Override
@@ -40,6 +62,7 @@ public class CameraSize implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeTypedArray(mISizes, flags);
+        dest.writeInt(width);
+        dest.writeInt(height);
     }
 }

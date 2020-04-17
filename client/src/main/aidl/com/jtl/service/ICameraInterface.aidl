@@ -3,7 +3,6 @@ package com.jtl.service;
 
 // Declare any non-default types here with import statements
 import com.jtl.service.ICameracallBack;
-import com.jtl.service.CameraSize;
 
 interface ICameraInterface {
 
@@ -17,5 +16,5 @@ interface ICameraInterface {
 
     void unregister(ICameraCallBack callBack);
 
-    CameraSize getCameraSize();
+    List getCameraSize();
 }

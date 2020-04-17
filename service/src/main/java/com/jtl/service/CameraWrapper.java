@@ -101,6 +101,7 @@ public class CameraWrapper implements ImageReader.OnImageAvailableListener {
                 @Override
                 public void onOpened(@NonNull CameraDevice camera) {
                     mCameraDevice = camera;
+                    mCameraDevice.close();
                     startPreview(cameraType);
 
                     Log.w(TAG, "onOpened");

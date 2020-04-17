@@ -3,8 +3,6 @@ package com.jtl.service;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.nio.ByteBuffer;
-
 /**
  * @author：TianLong
  * @date：2020/4/15 11:54
