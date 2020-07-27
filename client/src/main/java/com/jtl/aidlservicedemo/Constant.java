@@ -28,9 +28,6 @@ public class Constant {
     public static final int WIDTH = 640;
     public static final int HEIGHT = 480;
 
-    public static @CameraType
-    String CAMERA_TYPE = CAMERA_BACK;
-
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.PARAMETER, ElementType.FIELD})
     @IntDef({RGB, YUV420P_NV12, YUV420P_NV21, YUV420SP_YU12, YUV420SP_YV12, YUV_Y})
