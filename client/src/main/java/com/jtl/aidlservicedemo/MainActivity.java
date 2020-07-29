@@ -3,10 +3,14 @@ package com.jtl.aidlservicedemo;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.os.SharedMemory;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
+import android.system.ErrnoException;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -34,6 +38,7 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     private int imageWidth = 960;
     private int imageHeight = 720;
+    private String mCameraId = Constant.CAMERA_BACK;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,7 +80,10 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     public void openCamera(View view) throws RemoteException {
         if (isConnectService && mICameraInterface != null) {
-            mICameraInterface.openCamera("0");
+            mICameraInterface.openCamera(mCameraId);
+
+            mICameraInterface.isSharedMemory(false);
+
             List<CameraSize> lists = getCameraSize();
             for (CameraSize cameraSize : lists) {
                 Log.w(TAG, cameraSize.toString());
@@ -133,6 +141,21 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         public void cameraCallBack(CameraData data) throws RemoteException {
             mCameraGLSurface.setDataSize(imageWidth, imageHeight);
             mCameraGLSurface.setCameraData(data.mCameraId, data.imageData);
+            mCameraGLSurface.requestRender();
+        }
+
+        @RequiresApi(api = Build.VERSION_CODES.O_MR1)
+        @Override
+        public void sharedCameraCallBack(SharedMemory memory) throws RemoteException {
+            mCameraGLSurface.setDataSize(imageWidth, imageHeight);
+            byte[] bytes = new byte[memory.getSize()];
+            try {
+                memory.mapReadWrite().position(0);
+                memory.mapReadWrite().put(bytes);
+            } catch (ErrnoException e) {
+                e.printStackTrace();
+            }
+            mCameraGLSurface.setCameraData(mCameraId, bytes);
             mCameraGLSurface.requestRender();
         }
     }

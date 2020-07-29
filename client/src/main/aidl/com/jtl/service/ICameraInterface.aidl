@@ -17,4 +17,6 @@ interface ICameraInterface {
     void unregister(ICameraCallBack callBack);
 
     List getCameraSize();
+
+    boolean isSharedMemory(boolean isShared);
 }
