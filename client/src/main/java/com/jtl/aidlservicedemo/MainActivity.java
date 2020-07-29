@@ -9,9 +9,14 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.os.SharedMemory;
 import android.support.annotation.RequiresApi;
+import android.support.constraint.ConstraintLayout;
+import android.support.constraint.ConstraintSet;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.system.ErrnoException;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
@@ -21,24 +26,32 @@ import com.jtl.service.CameraSize;
 import com.jtl.service.ICameraCallBack;
 import com.jtl.service.ICameraInterface;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @author TianLong
  */
-public class MainActivity extends AppCompatActivity implements ServiceConnection {
+public class MainActivity extends AppCompatActivity implements ServiceConnection, Toolbar.OnMenuItemClickListener {
     private static final String TAG = "MainActivity";
     private String servicePackage = "com.jtl.service";
     private String serviceAction = "com.jtl.cameraservice";
     private volatile boolean isBindService = false;
     private volatile boolean isConnectService = false;
     private ICameraInterface mICameraInterface;
-    private CameraGLSurface mCameraGLSurface;
     private ICameraCallBack mICameraCallBack;
 
-    private int imageWidth = 960;
-    private int imageHeight = 720;
+    private Toolbar mToolbar;
+    private CameraGLSurface mCameraGLSurface;
+    private ConstraintLayout mConstraintLayout;
+    //    private int imageWidth = 960;
+//    private int imageHeight = 720;
+    private int imageWidth = 1920;
+    private int imageHeight = 1080;
+    //    private int imageWidth = 4032;
+//    private int imageHeight = 3024;
     private String mCameraId = Constant.CAMERA_BACK;
+    private List<CameraSize> lists = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,8 +59,50 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
         setContentView(R.layout.activity_main);
 
         mCameraGLSurface = findViewById(R.id.gl_main_camera);
+        mConstraintLayout = findViewById(R.id.layout_main_constraint);
+        mToolbar = findViewById(R.id.tool_main_menu);
+
+        mToolbar.setTitle("AIDL");
+        mToolbar.inflateMenu(R.menu.camera_size);
+        mToolbar.setOnMenuItemClickListener(this);
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        for (CameraSize size : lists) {
+            menu.add(size.getWidth() + " * " + size.getHeight());
+        }
+        getMenuInflater().inflate(R.menu.camera_size, menu);
+        mToolbar.inflateMenu(R.menu.camera_size);
+        return true;
+    }
+
+    @Override
+    public boolean onMenuItemClick(MenuItem menuItem) {
+        return false;
+    }
+
+    private void setLayout(final int width, final int height) {
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ConstraintSet constraintSet = new ConstraintSet();
+                constraintSet.clone(mConstraintLayout);
+                constraintSet.clear(R.id.gl_main_camera);
+
+                constraintSet.connect(R.id.gl_main_camera, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP);
+                constraintSet.connect(R.id.gl_main_camera, ConstraintSet.START, ConstraintSet.PARENT_ID, ConstraintSet.START);
+                constraintSet.connect(R.id.gl_main_camera, ConstraintSet.END, ConstraintSet.PARENT_ID, ConstraintSet.END);
+//                constraintSet.connect(R.id.gl_main_camera,ConstraintSet.BOTTOM,R.id.btn_service_bind,ConstraintSet.TOP);
+
+                constraintSet.setDimensionRatio(R.id.gl_main_camera, height + ":" + width);
+                constraintSet.applyTo(mConstraintLayout);
+            }
+        });
+
+    }
 
     public void bindService(View view) {
         if (!isBindService) {
@@ -80,11 +135,10 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
 
     public void openCamera(View view) throws RemoteException {
         if (isConnectService && mICameraInterface != null) {
+            mICameraInterface.isSharedMemory(true);
             mICameraInterface.openCamera(mCameraId);
-
-            mICameraInterface.isSharedMemory(false);
-
-            List<CameraSize> lists = getCameraSize();
+            setLayout(imageWidth, imageHeight);
+            lists = getCameraSize();
             for (CameraSize cameraSize : lists) {
                 Log.w(TAG, cameraSize.toString());
             }
@@ -150,8 +204,8 @@ public class MainActivity extends AppCompatActivity implements ServiceConnection
             mCameraGLSurface.setDataSize(imageWidth, imageHeight);
             byte[] bytes = new byte[memory.getSize()];
             try {
-                memory.mapReadWrite().position(0);
-                memory.mapReadWrite().put(bytes);
+//                memory.mapReadWrite().position(0);
+                memory.mapReadWrite().get(bytes);
             } catch (ErrnoException e) {
                 e.printStackTrace();
             }

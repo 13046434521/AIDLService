@@ -7,11 +7,15 @@ import android.os.IBinder;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.SharedMemory;
+import android.system.ErrnoException;
 import android.util.Log;
 import android.util.Size;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static android.system.OsConstants.PROT_READ;
+import static android.system.OsConstants.PROT_WRITE;
 
 /**
  * @author TianLong
@@ -54,6 +58,9 @@ public class CameraService extends Service {
     @Override
     public boolean onUnbind(Intent intent) {
         Log.w(TAG, "onUnbind");
+//        if (mCameraInterface!=null&&mCameraInterface.mCameraWrapper!=null){
+//            mCameraInterface.mCameraWrapper.closeCamera();
+//        }
         return super.onUnbind(intent);
     }
 
@@ -84,20 +91,20 @@ public class CameraService extends Service {
 
         @Override
         public void openCamera(String cameraId) throws RemoteException {
-            Log.w(TAG, "openCamera:" + cameraId);
+            Log.w(TAG, "openCamera:" + cameraId + "   SDK:" + Build.VERSION.SDK_INT);
             mCameraWrapper.openCamera(cameraId);
 
-//            if (isSharedMemory && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-//                //YUV数据的宽高
-//                try {
-//                    mSharedMemory = SharedMemory.create(SharedName, width * height * 3 / 2);
-//                    Log.w(TAG, "SharedMemory 共享内存跨进程传输数据");
-//                    mSharedMemory.map(PROT_READ | PROT_WRITE,0,width * height * 3 / 2);
-////                    mSharedMemory.setProtect(PROT_READ);
-//                } catch (ErrnoException e) {
-//                    e.printStackTrace();
-//                }
-//           }
+            if (isSharedMemory && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                //YUV数据的宽高
+                try {
+                    mSharedMemory = SharedMemory.create(SharedName, width * height * 3 / 2);
+                    Log.w(TAG, "SharedMemory 共享内存跨进程传输数据");
+                    mSharedMemory.setProtect(PROT_READ | PROT_WRITE);
+                } catch (ErrnoException e) {
+                    e.printStackTrace();
+                    Log.e(TAG, e.getMessage());
+                }
+            }
         }
 
         @Override
@@ -105,9 +112,9 @@ public class CameraService extends Service {
             Log.w(TAG, "closeCamera");
             mCameraWrapper.closeCamera();
 
-//            if (mSharedMemory!=null&&Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-//                mSharedMemory.close();
-//            }
+            if (mSharedMemory != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                mSharedMemory.close();
+            }
         }
 
         @Override
@@ -134,20 +141,26 @@ public class CameraService extends Service {
 
         @Override
         public void setCameraDataListener(String mCameraId, byte[] imageData, float timestamp, int imageFormat) {
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-//                try {
-//                    Log.d(TAG,"共享内存方式跨进程传输数据");
-//                    mSharedMemory.mapReadWrite().get(imageData);
-//                    upDataCameraData(mSharedMemory);
-//                } catch (ErrnoException e) {
-//                    e.printStackTrace();
-//                }
-//            } else {
-//
-//            }
-            Log.d(TAG, "Binder方式跨进程传输数据");
-            CameraData cameraData = new CameraData(mCameraId, imageData, timestamp, imageFormat);
-            upDataCameraData(cameraData);
+            if (isSharedMemory && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+                try {
+                    Log.d(TAG, "共享内存方式跨进程传输数据");
+                    if (imageData == null) {
+                        Log.d(TAG, "IMAGEDATA==NULL");
+                    }
+                    if (mSharedMemory.mapReadWrite() == null) {
+                        Log.d(TAG, "mSharedMemory==NULL");
+                    }
+                    mSharedMemory.mapReadWrite().position(0);
+                    mSharedMemory.mapReadWrite().put(imageData);
+                    upDataCameraData(mSharedMemory);
+                } catch (ErrnoException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                Log.d(TAG, "Binder方式跨进程传输数据");
+                CameraData cameraData = new CameraData(mCameraId, imageData, timestamp, imageFormat);
+                upDataCameraData(cameraData);
+            }
         }
 
         public void upDataCameraData(CameraData cameraData) {
